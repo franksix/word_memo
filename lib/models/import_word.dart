@@ -1,0 +1,1 @@
+typedef ImportWord = ({String word, String meaning});
