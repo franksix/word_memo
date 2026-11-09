@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 
 import '../data/app_database.dart';
 import '../models/word_book.dart';
-import '../services/settings_service.dart';
+import '../services/settings_service.dart'; // 确保引对路径
 import '../widgets/mode_select_sheet.dart';
+import '../widgets/settings_sheet.dart';     // 确保引对路径
 import 'create_book_page.dart';
 import 'import_page.dart';
 import 'manage_words_page.dart';
 import 'practice_page.dart';
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -216,35 +216,72 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final hasBooks = _books.isNotEmpty;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Icon(Icons.menu_book_outlined),
+        title: IconButton(
+          onPressed: () => SettingsSheet.show(context),
+          icon: const Icon(Icons.menu_book_outlined),
+          tooltip: '设置',
+          padding: EdgeInsets.zero,
+          alignment: Alignment.centerLeft,
+        ),
         actions: [
           IconButton(
+            tooltip: '手动创建词书',
+            icon: const Icon(Icons.add),
+            onPressed: _loading ? null : _onCreateTap,
+          ),
+          IconButton(
             tooltip: '导入词库',
-            // 换成了 file_open，表示从本地打开文件
             icon: const Icon(Icons.file_open_outlined),
             onPressed: _loading ? null : _onImportTap,
           ),
         ],
       ),
       body: _buildBody(),
-      // FAB 只要不是加载中就一直显示，方便在空状态下快速创建
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       floatingActionButton: _loading
           ? null
-          : FloatingActionButton(
-        onPressed: _onCreateTap,
-        tooltip: '手动创建词书',
-        child: const Icon(Icons.add),
-      ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          : Padding(
+        // 重点1：底部留出 24 的空白，让它远离底边；左右留出 24 让它不贴边
+        padding: const EdgeInsets.only(left: 24, right: 24, bottom: 24),
         child: SizedBox(
-          height: 52,
-          child: FilledButton(
-            onPressed:
-            (_currentBookId != null && !_loading) ? _startStudy : null,
-            child: const Icon(Icons.play_arrow),
+          // 重点2：宽度拉满整个屏幕，高度增至 72
+          width: double.infinity,
+          height: 72,
+          child: FloatingActionButton(
+            // 重点3：大圆角矩形，取代正圆形
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            onPressed: hasBooks ? _startStudy : _onCreateTap,
+            tooltip: hasBooks ? '开始练习' : '新建词书',
+            // 稍微加重阴影，增强悬浮感
+            elevation: 8,
+            child: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (Widget child, Animation<double> animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: ScaleTransition(
+                    scale: Tween<double>(begin: 0.8, end: 1.0).animate(
+                      CurvedAnimation(
+                        parent: animation,
+                        curve: Curves.easeOutCubic,
+                      ),
+                    ),
+                    child: child,
+                  ),
+                );
+              },
+              child: Icon(
+                hasBooks ? Icons.play_arrow : Icons.add,
+                key: ValueKey<bool>(hasBooks),
+                size: 36, // 图标放大
+              ),
+            ),
           ),
         ),
       ),
@@ -284,14 +321,13 @@ class _HomePageState extends State<HomePage> {
       );
     }
     if (_books.isEmpty) {
-      // 空状态下，居中显示图标提示即可，操作由 AppBar 和 FAB 承担
       return Center(
         child: Icon(Icons.library_books_outlined,
             size: 72, color: theme.colorScheme.outline),
       );
     }
     return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 140),
       itemCount: _books.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) => _buildBookCard(_books[index]),
