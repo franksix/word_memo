@@ -1,61 +1,56 @@
 import 'package:flutter/material.dart';
 
 import '../models/practice_mode.dart';
+import '../models/word.dart';
 
 class ModeSelectSheet extends StatelessWidget {
-  const ModeSelectSheet({super.key});
+  /// 用当前词书的第一个词做示例，代入感最强。
+  final Word sample;
 
-  static Future<PracticeMode?> show(BuildContext context) {
+  const ModeSelectSheet({super.key, required this.sample});
+
+  static Future<PracticeMode?> show(
+      BuildContext context, {
+        required Word sample,
+      }) {
     return showModalBottomSheet<PracticeMode>(
       context: context,
       showDragHandle: true,
-      builder: (_) => const ModeSelectSheet(),
+      builder: (_) => ModeSelectSheet(sample: sample),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(bottom: 16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.school_outlined,
-                    size: 24,
-                    color: theme.colorScheme.primary,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    '选择学习模式',
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ],
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        // IntrinsicHeight 让两张卡按内容自适应并严格等高
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(
+                child: _ModeCard(
+                  sampleText: sample.word,
+                  inputHint: '输入释义',
+                  inputIcon: Icons.translate,
+                  onTap: () =>
+                      Navigator.of(context).pop(PracticeMode.wordToMeaning),
+                ),
               ),
-            ),
-            _ModeCard(
-              icon: Icons.translate,
-              title: PracticeMode.wordToMeaning.label,
-              description: '给出英文单词，输入中文释义',
-              onTap: () =>
-                  Navigator.of(context).pop(PracticeMode.wordToMeaning),
-            ),
-            const SizedBox(height: 12),
-            _ModeCard(
-              icon: Icons.spellcheck,
-              title: PracticeMode.meaningToWord.label,
-              description: '给出中文释义，输入英文单词',
-              onTap: () =>
-                  Navigator.of(context).pop(PracticeMode.meaningToWord),
-            ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: _ModeCard(
+                  sampleText: sample.meaning,
+                  inputHint: '输入单词',
+                  inputIcon: Icons.abc,
+                  onTap: () =>
+                      Navigator.of(context).pop(PracticeMode.meaningToWord),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -63,15 +58,15 @@ class ModeSelectSheet extends StatelessWidget {
 }
 
 class _ModeCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String description;
+  final String sampleText;
+  final String inputHint;
+  final IconData inputIcon;
   final VoidCallback onTap;
 
   const _ModeCard({
-    required this.icon,
-    required this.title,
-    required this.description,
+    required this.sampleText,
+    required this.inputHint,
+    required this.inputIcon,
     required this.onTap,
   });
 
@@ -90,40 +85,53 @@ class _ModeCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
-          child: Row(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center, // 居中显示
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  shape: BoxShape.circle,
+              // 示例词
+              Text(
+                sampleText,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
                 ),
-                child: Icon(
-                  icon,
-                  color: theme.colorScheme.primary,
-                  size: 26,
-                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+              const SizedBox(height: 16),
+              // 占位样式的输入框
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: theme.colorScheme.outlineVariant,
+                  ),
+                ),
+                child: Row(
                   children: [
-                    Text(title, style: theme.textTheme.titleSmall),
-                    const SizedBox(height: 4),
-                    Text(
-                      description,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
+                    Icon(
+                      inputIcon,
+                      size: 14,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        inputHint,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                   ],
                 ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
           ),

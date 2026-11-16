@@ -117,6 +117,47 @@ class AppDatabase {
     return bookId;
   }
 
+  /// 专门用于云端同步：如果传了旧 ID，先删旧的再插新的
+  Future<String> replaceCloudBook({
+    required String? oldBookId,
+    required String name,
+    required List<ImportWord> words,
+  }) async {
+    assert(words.isNotEmpty, 'words 不能为空');
+    final db = await database;
+
+    if (oldBookId != null) {
+      await db.delete('word_books', where: 'id = ?', whereArgs: [oldBookId]);
+    }
+
+    final now = DateTime.now();
+    final bookId = 'book_cloud_${now.microsecondsSinceEpoch}';
+
+    final book = WordBook(
+      id: bookId,
+      name: name,
+      source: WordBookSource.cloud,
+      createdAt: now,
+    );
+
+    await db.transaction((txn) async {
+      await txn.insert('word_books', book.toMap());
+      final batch = txn.batch();
+      for (var i = 0; i < words.length; i++) {
+        batch.insert('words', {
+          'id': '${bookId}_${i.toString().padLeft(4, '0')}',
+          'word_book_id': bookId,
+          'word': words[i].word,
+          'meaning': words[i].meaning,
+          'order_index': i,
+        });
+      }
+      await batch.commit(noResult: true);
+    });
+
+    return bookId;
+  }
+
   Future<void> updateWord({
     required String wordId,
     required String word,
@@ -129,11 +170,6 @@ class AppDatabase {
       where: 'id = ?',
       whereArgs: [wordId],
     );
-  }
-
-  Future<void> deleteWord(String wordId) async {
-    final db = await database;
-    await db.delete('words', where: 'id = ?', whereArgs: [wordId]);
   }
 
   Future<Word> addWordToBook({
@@ -159,10 +195,28 @@ class AppDatabase {
     return newWord;
   }
 
+  Future<void> deleteWord(String wordId) async {
+    final db = await database;
+    await db.delete('words', where: 'id = ?', whereArgs: [wordId]);
+  }
+
   Future<void> deleteWordBook(String bookId) async {
     final db = await database;
     await db.delete(
       'word_books',
+      where: 'id = ?',
+      whereArgs: [bookId],
+    );
+  }
+
+  Future<void> updateWordBookName({
+    required String bookId,
+    required String name,
+  }) async {
+    final db = await database;
+    await db.update(
+      'word_books',
+      {'name': name},
       where: 'id = ?',
       whereArgs: [bookId],
     );

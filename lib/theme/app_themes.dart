@@ -54,7 +54,7 @@ ThemeData buildAppTheme(AppThemeStyle style, Brightness brightness) {
       onSecondary = Colors.white;
       secondaryContainer = const Color(0xFFD8DFE8);
       onSecondaryContainer = const Color(0xFF232B3A);
-      success = const Color(0xFF4F7E5D);
+      success = const Color(0xFF4F7E5D); // 莫奈：低饱和灰绿
       onSuccess = Colors.white;
       error = const Color(0xFFA85454);
       onError = Colors.white;
@@ -74,7 +74,7 @@ ThemeData buildAppTheme(AppThemeStyle style, Brightness brightness) {
       onSecondary = const Color(0xFF232B3A);
       secondaryContainer = const Color(0xFF444E60);
       onSecondaryContainer = const Color(0xFFD8DFE8);
-      success = const Color(0xFF9CC49E);
+      success = const Color(0xFF9CC49E); // 莫奈暗色
       onSuccess = const Color(0xFF0F2926);
       error = const Color(0xFFE8A5A5);
       onError = const Color(0xFF4A1F1F);
@@ -96,7 +96,7 @@ ThemeData buildAppTheme(AppThemeStyle style, Brightness brightness) {
       onSecondary = Colors.white;
       secondaryContainer = const Color(0xFFE8E0D5);
       onSecondaryContainer = const Color(0xFF3D362D);
-      success = const Color(0xFF6B8E5C);
+      success = const Color(0xFF7D8B6B); // 纸张：复古苔藓绿/橄榄绿
       onSuccess = Colors.white;
       error = const Color(0xFFA85454);
       onError = Colors.white;
@@ -116,7 +116,7 @@ ThemeData buildAppTheme(AppThemeStyle style, Brightness brightness) {
       onSecondary = const Color(0xFF3D362D);
       secondaryContainer = const Color(0xFF544B40);
       onSecondaryContainer = const Color(0xFFE8E0D5);
-      success = const Color(0xFFA8C3A6);
+      success = const Color(0xFFA6B89A); // 纸张暗色：暗草绿
       onSuccess = const Color(0xFF1E1B18);
       error = const Color(0xFFE8A5A5);
       onError = const Color(0xFF4A1F1F);
@@ -138,7 +138,7 @@ ThemeData buildAppTheme(AppThemeStyle style, Brightness brightness) {
       onSecondary = Colors.white;
       secondaryContainer = const Color(0xFFE0E4EA);
       onSecondaryContainer = const Color(0xFF2D333B);
-      success = const Color(0xFF3C8A70);
+      success = const Color(0xFF4D8083); // 冰川：孔雀蓝/青绿色
       onSuccess = Colors.white;
       error = const Color(0xFFA85454);
       onError = Colors.white;
@@ -158,7 +158,7 @@ ThemeData buildAppTheme(AppThemeStyle style, Brightness brightness) {
       onSecondary = const Color(0xFF2D333B);
       secondaryContainer = const Color(0xFF404A58);
       onSecondaryContainer = const Color(0xFFE0E4EA);
-      success = const Color(0xFF82C0AC);
+      success = const Color(0xFF85BABD); // 冰川暗色：亮青色
       onSuccess = const Color(0xFF13161A);
       error = const Color(0xFFE8A5A5);
       onError = const Color(0xFF4A1F1F);
@@ -181,7 +181,7 @@ ThemeData buildAppTheme(AppThemeStyle style, Brightness brightness) {
       onSecondary = Colors.white;
       secondaryContainer = const Color(0xFFEBE2DF);
       onSecondaryContainer = const Color(0xFF423834);
-      success = const Color(0xFF6C8A6B);
+      success = const Color(0xFFA86C66); // 蜜桃：温暖的陶土红/深豆沙
       onSuccess = Colors.white;
       error = const Color(0xFFA85454);
       onError = Colors.white;
@@ -201,7 +201,7 @@ ThemeData buildAppTheme(AppThemeStyle style, Brightness brightness) {
       onSecondary = const Color(0xFF423834);
       secondaryContainer = const Color(0xFF584B46);
       onSecondaryContainer = const Color(0xFFEBE2DF);
-      success = const Color(0xFFA7C4A3);
+      success = const Color(0xFFD9A09B); // 蜜桃暗色：珊瑚红
       onSuccess = const Color(0xFF1A1818);
       error = const Color(0xFFE8A5A5);
       onError = const Color(0xFF4A1F1F);

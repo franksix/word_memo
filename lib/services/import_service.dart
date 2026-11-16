@@ -1,6 +1,7 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'package:csv/csv.dart';
+import 'package:http/http.dart' as http;
 
 import '../models/import_word.dart';
 import '../models/word_book.dart';
@@ -34,26 +35,15 @@ class ImportService {
     final ext = _extension(safeName);
     final bookName = _bookNameFromFile(safeName);
 
-    final WordBookSource source;
-    switch (ext) {
-      case 'csv':
-        source = WordBookSource.csv;
-        break;
-      case 'json':
-        source = WordBookSource.json;
-        break;
-      case 'txt':
-        source = WordBookSource.txt;
-        break;
-      default:
-        return ImportParseResult(
-          source: WordBookSource.csv,
-          fileName: safeName,
-          bookName: bookName,
-          words: const [],
-          skippedCount: 0,
-          error: '不支持的文件类型，仅支持 .csv / .json / .txt',
-        );
+    if (ext != 'json') {
+      return ImportParseResult(
+        source: WordBookSource.json,
+        fileName: safeName,
+        bookName: bookName,
+        words: const [],
+        skippedCount: 0,
+        error: '不支持的文件类型，仅支持 .json',
+      );
     }
 
     String content;
@@ -61,7 +51,7 @@ class ImportService {
       content = utf8.decode(bytes);
     } catch (_) {
       return ImportParseResult(
-        source: source,
+        source: WordBookSource.json,
         fileName: safeName,
         bookName: bookName,
         words: const [],
@@ -74,17 +64,11 @@ class ImportService {
     }
 
     try {
-      final parsed = switch (source) {
-        WordBookSource.csv => _parseCsv(content),
-        WordBookSource.json => _parseJson(content),
-        WordBookSource.txt => _parseTxt(content),
-        WordBookSource.builtin => throw StateError('unreachable'),
-        WordBookSource.manual => throw StateError('unreachable'),
-      };
+      final parsed = _parseJson(content);
 
       if (parsed.words.isEmpty) {
         return ImportParseResult(
-          source: source,
+          source: WordBookSource.json,
           fileName: safeName,
           bookName: bookName,
           words: const [],
@@ -94,7 +78,7 @@ class ImportService {
       }
 
       return ImportParseResult(
-        source: source,
+        source: WordBookSource.json,
         fileName: safeName,
         bookName: bookName,
         words: parsed.words,
@@ -102,7 +86,7 @@ class ImportService {
       );
     } on FormatException catch (e) {
       return ImportParseResult(
-        source: source,
+        source: WordBookSource.json,
         fileName: safeName,
         bookName: bookName,
         words: const [],
@@ -111,7 +95,7 @@ class ImportService {
       );
     } catch (e) {
       return ImportParseResult(
-        source: source,
+        source: WordBookSource.json,
         fileName: safeName,
         bookName: bookName,
         words: const [],
@@ -121,43 +105,57 @@ class ImportService {
     }
   }
 
-  static ({List<ImportWord> words, int skipped}) _parseCsv(String content) {
-    final normalized = content.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
-    final rows = const CsvToListConverter(
-      shouldParseNumbers: false,
-      eol: '\n',
-    ).convert(normalized);
+  /// 从链接下载 JSON 并挑出有效词条。
+  /// 成功：(words: 列表, error: null)；
+  /// 失败：(words: null, error: 说明)。
+  static Future<({List<ImportWord>? words, String? error})> fetchFromUrl(
+      String url,
+      ) async {
+    try {
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 15));
+      if (response.statusCode != 200) {
+        return (words: null, error: '请求失败：${response.statusCode}');
+      }
 
-    if (rows.isEmpty) {
-      throw const FormatException('CSV 文件为空');
-    }
+      final dynamic decoded = jsonDecode(utf8.decode(response.bodyBytes));
+      if (decoded is! List) {
+        return (words: null, error: 'JSON 顶层必须是数组');
+      }
 
-    final header = rows.first
-        .map((e) => e.toString().trim().toLowerCase())
-        .toList(growable: false);
-    if (header.length < 2 || header[0] != 'word' || header[1] != 'meaning') {
-      throw const FormatException('CSV 首行表头必须为 word,meaning');
-    }
-
-    final words = <ImportWord>[];
-    var skipped = 0;
-    for (var i = 1; i < rows.length; i++) {
-      final row = rows[i];
-      if (row.length < 2) {
-        if (row.isNotEmpty && row.first.toString().trim().isNotEmpty) {
-          skipped++;
+      final words = <ImportWord>[];
+      for (final item in decoded) {
+        if (item is! Map) continue;
+        final rawWord = item['word'];
+        final rawMeaning = item['meaning'];
+        if (rawWord is! String || rawMeaning is! String) continue;
+        final word = rawWord.trim();
+        final meaning = rawMeaning.trim();
+        if (word.isNotEmpty && meaning.isNotEmpty) {
+          words.add((word: word, meaning: meaning));
         }
-        continue;
       }
-      final word = row[0].toString().trim();
-      final meaning = row[1].toString().trim();
-      if (word.isEmpty || meaning.isEmpty) {
-        skipped++;
-        continue;
+
+      if (words.isEmpty) {
+        return (words: null, error: '没有可导入的有效词条');
       }
-      words.add((word: word, meaning: meaning));
+      return (words: words, error: null);
+    } on TimeoutException {
+      return (words: null, error: '连接超时，请检查网络');
+    } on FormatException catch (e) {
+      return (words: null, error: 'JSON 格式错误：${e.message}');
+    } catch (e) {
+      final errStr = e.toString();
+      // 识别断网、DNS 解析失败、无法连接主机等底层网络错误
+      if (errStr.contains('SocketException') ||
+          errStr.contains('ClientException') ||
+          errStr.contains('Failed host lookup') ||
+          errStr.contains('Network is unreachable')) {
+        return (words: null, error: '网络连接失败，请检查网络');
+      }
+      return (words: null, error: '下载失败，请稍后再试');
     }
-    return (words: words, skipped: skipped);
   }
 
   static ({List<ImportWord> words, int skipped}) _parseJson(String content) {
@@ -186,29 +184,6 @@ class ImportService {
       }
       final word = rawWord.trim();
       final meaning = rawMeaning.trim();
-      if (word.isEmpty || meaning.isEmpty) {
-        skipped++;
-        continue;
-      }
-      words.add((word: word, meaning: meaning));
-    }
-    return (words: words, skipped: skipped);
-  }
-
-  static ({List<ImportWord> words, int skipped}) _parseTxt(String content) {
-    final lines = content.split(RegExp(r'\r\n|\r|\n'));
-    final words = <ImportWord>[];
-    var skipped = 0;
-    for (final raw in lines) {
-      final line = raw.trim();
-      if (line.isEmpty) continue;
-      final idx = line.indexOf(',');
-      if (idx < 0) {
-        skipped++;
-        continue;
-      }
-      final word = line.substring(0, idx).trim();
-      final meaning = line.substring(idx + 1).trim();
       if (word.isEmpty || meaning.isEmpty) {
         skipped++;
         continue;

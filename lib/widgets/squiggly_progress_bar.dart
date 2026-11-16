@@ -21,6 +21,9 @@ class SquigglyProgressBar extends StatefulWidget {
   /// 一个波长周期滚动所需时间
   final Duration period;
 
+  /// 是否在进度条头部显示小圆点
+  final bool showIndicator;
+
   const SquigglyProgressBar({
     super.key,
     required this.value,
@@ -29,6 +32,7 @@ class SquigglyProgressBar extends StatefulWidget {
     this.inactiveColor = const Color(0x3D49454F),
     this.animated = true,
     this.period = const Duration(milliseconds: 700),
+    this.showIndicator = false, // 默认关闭
   });
 
   @override
@@ -80,6 +84,7 @@ class _SquigglyProgressBarState extends State<SquigglyProgressBar>
               height: widget.height,
               activeColor: widget.activeColor,
               inactiveColor: widget.inactiveColor,
+              showIndicator: widget.showIndicator,
             ),
           );
         },
@@ -94,6 +99,7 @@ class _SquigglyPainter extends CustomPainter {
   final double height;
   final Color activeColor;
   final Color inactiveColor;
+  final bool showIndicator;
 
   _SquigglyPainter({
     required this.progress,
@@ -101,6 +107,7 @@ class _SquigglyPainter extends CustomPainter {
     required this.height,
     required this.activeColor,
     required this.inactiveColor,
+    required this.showIndicator,
   });
 
   @override
@@ -159,13 +166,15 @@ class _SquigglyPainter extends CustomPainter {
 
     canvas.drawPath(path, activePaint);
 
-    // 3. 播放头：小圆点
-    final headY = cy;
-    canvas.drawCircle(
-      Offset(activeWidth, headY),
-      strokeWidth * 0.9,
-      Paint()..color = activeColor,
-    );
+    // 3. 播放头：小圆点（根据参数决定是否绘制）
+    if (showIndicator) {
+      final headY = cy;
+      canvas.drawCircle(
+        Offset(activeWidth, headY),
+        strokeWidth * 0.9,
+        Paint()..color = activeColor,
+      );
+    }
   }
 
   @override
@@ -174,6 +183,7 @@ class _SquigglyPainter extends CustomPainter {
         old.phase != phase ||
         old.height != height ||
         old.activeColor != activeColor ||
-        old.inactiveColor != inactiveColor;
+        old.inactiveColor != inactiveColor ||
+        old.showIndicator != showIndicator;
   }
 }

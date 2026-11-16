@@ -36,7 +36,8 @@ class NotificationService {
     // 1. 初始化时区数据
     tz.initializeTimeZones();
     try {
-      final String currentTimeZone = await FlutterTimezone.getLocalTimezone();
+      final TimezoneInfo tzInfo = await FlutterTimezone.getLocalTimezone();
+      final String currentTimeZone = tzInfo.identifier;
       final location = tz.getLocation(currentTimeZone);
       tz.setLocalLocation(location);
     } catch (_) {

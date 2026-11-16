@@ -3,7 +3,8 @@ enum WordBookSource {
   csv,
   json,
   txt,
-  manual;
+  manual,
+  cloud;
 
   static WordBookSource fromString(String? value) {
     switch (value) {
@@ -15,6 +16,8 @@ enum WordBookSource {
         return WordBookSource.txt;
       case 'manual':
         return WordBookSource.manual;
+      case 'cloud':
+        return WordBookSource.cloud;
       default:
         return WordBookSource.builtin;
     }

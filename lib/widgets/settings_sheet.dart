@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+
 import '../main.dart';
 import '../services/notification_service.dart';
 import '../services/settings_service.dart';
 import '../theme/app_themes.dart';
+import '../pages/help_page.dart';
 
 class SettingsSheet extends StatefulWidget {
   const SettingsSheet({super.key});
@@ -216,14 +218,31 @@ class _SettingsSheetState extends State<SettingsSheet> {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+
+            const SizedBox(height: 24),
+            const Divider(),
+            const SizedBox(height: 8),
+
+            // --- 帮助与教程（去掉了副标题） ---
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.help_outline, color: theme.colorScheme.primary),
+              title: Text('帮助', style: theme.textTheme.titleMedium),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () {
+                Navigator.of(context).pop(); // 先关掉当前底部面板
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const HelpPage()),
+                );
+              },
+            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
     );
   }
 
-  // 删除了 label 参数和底部的 Text 组件
   Widget _buildColorDot(AppThemeStyle style, Color color) {
     return ValueListenableBuilder<AppThemeStyle>(
       valueListenable: themeStyleNotifier,

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SettingsService {
@@ -16,6 +17,14 @@ class SettingsService {
   static const _keyNotificationEnabled = 'notification_enabled';
   static const _keyNotificationHour = 'notification_hour';
   static const _keyNotificationMinute = 'notification_minute';
+
+  // 云端词库相关（改为 Map 存储：{"bookId": "url"}）
+  static const _keyCloudBookMap = 'cloud_book_map';
+
+  // ===== 推荐词书相关 =====
+  static const _keyHasEverAddedBook = 'has_ever_added_book';
+  static const _keyFirstOpenTime = 'first_open_time';
+  static const _keyRecommendedClosed = 'recommended_closed';
 
   SharedPreferences? _prefs;
 
@@ -95,5 +104,74 @@ class SettingsService {
   Future<void> setNotificationMinute(int minute) async {
     final p = await _p;
     await p.setInt(_keyNotificationMinute, minute);
+  }
+
+  // ===== 云端词库 Map 存储 =====
+  Future<Map<String, String>> getCloudBookMap() async {
+    final p = await _p;
+    final str = p.getString(_keyCloudBookMap);
+    if (str == null || str.isEmpty) return {};
+    try {
+      final Map<String, dynamic> decoded = jsonDecode(str);
+      return decoded.map((key, value) => MapEntry(key, value.toString()));
+    } catch (_) {
+      return {};
+    }
+  }
+
+  Future<String?> getCloudUrlByBookId(String bookId) async {
+    final map = await getCloudBookMap();
+    return map[bookId];
+  }
+
+  Future<void> setCloudUrlByBookId(String bookId, String url) async {
+    final p = await _p;
+    final map = await getCloudBookMap();
+    map[bookId] = url;
+    await p.setString(_keyCloudBookMap, jsonEncode(map));
+  }
+
+  Future<void> removeCloudUrlByBookId(String bookId) async {
+    final p = await _p;
+    final map = await getCloudBookMap();
+    map.remove(bookId);
+    await p.setString(_keyCloudBookMap, jsonEncode(map));
+  }
+
+  // ===== 推荐词书展示控制 =====
+
+  /// 记录用户是否曾经成功添加过词书（意味着不再是纯新手）
+  Future<bool> getHasEverAddedBook() async {
+    final p = await _p;
+    return p.getBool(_keyHasEverAddedBook) ?? false;
+  }
+
+  Future<void> setHasEverAddedBook() async {
+    final p = await _p;
+    await p.setBool(_keyHasEverAddedBook, true);
+  }
+
+  /// 记录用户首次打开 App 的时间（用于计算是否已使用超过 7 天）
+  Future<DateTime> getFirstOpenTime() async {
+    final p = await _p;
+    final ms = p.getInt(_keyFirstOpenTime);
+    if (ms == null) {
+      // 如果没记录过，说明是首次打开，立刻记录当前时间
+      final now = DateTime.now();
+      await p.setInt(_keyFirstOpenTime, now.millisecondsSinceEpoch);
+      return now;
+    }
+    return DateTime.fromMillisecondsSinceEpoch(ms);
+  }
+
+  /// 用户是否在空状态下手动关闭了“为你推荐”列表
+  Future<bool> getRecommendedClosed() async {
+    final p = await _p;
+    return p.getBool(_keyRecommendedClosed) ?? false;
+  }
+
+  Future<void> setRecommendedClosed() async {
+    final p = await _p;
+    await p.setBool(_keyRecommendedClosed, true);
   }
 }

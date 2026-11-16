@@ -111,7 +111,6 @@ class _CreateBookPageState extends State<CreateBookPage> {
     final theme = Theme.of(context);
     return Scaffold(
       appBar: AppBar(
-        title: const Icon(Icons.create_new_folder_outlined),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
